@@ -7,7 +7,6 @@ import { getAllUsers } from '../../APIFunctions/User';
 export default function SearchModal(props) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
-  const prevKeyword = useRef('');
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
@@ -23,7 +22,7 @@ export default function SearchModal(props) {
   function handleChanges(e) {
     setKeyword(e.target.value);
     setSelectItem(0);
-  };
+  }
 
   async function getUserData() {
     try {
@@ -35,7 +34,6 @@ export default function SearchModal(props) {
         sortOrder: 'asc'
       });
       setUsers(apiResponse.responseData.items);
-      // console.log('api fetch') // For debug
     } catch (error) {
       alert(error.message);
     }
@@ -49,11 +47,7 @@ export default function SearchModal(props) {
     if (!open) return;
 
     const debounce = setTimeout(() => {
-      // Only fetch users when there is a change in keyword
-      if (props.user.accessLevel >= membershipState.OFFICER && prevKeyword.current !== keyword) {
-        getUserData();
-        prevKeyword.current = keyword; // Update previous keyword after fetching for new data
-      }
+      if (props.user.accessLevel >= membershipState.OFFICER) getUserData();
       const matches = [
         ...routes.filter((r) =>
           r.pageName?.toLowerCase().includes(keyword.toLowerCase())
@@ -74,7 +68,7 @@ export default function SearchModal(props) {
       ];
 
       setSuggestions(matches);
-    }, 400);
+    }, 800);
 
     return () => clearTimeout(debounce);
   }, [keyword, routes, open]);

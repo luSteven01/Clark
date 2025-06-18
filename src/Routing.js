@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import PrivateRoute from './Components/Routing/PrivateRoute';
 import NavBarWrapper from './Components/Navbar/NavBarWrapper';
 
-
 import NotFoundPage from './Pages/NotFoundPage/NotFoundPage';
 import { officerSignedInRoutes, memberSignedInRoutes, signedOutRoutes } from './RouteConfig.js';
 
