@@ -8,7 +8,6 @@ import { useAuth } from '../context/AuthContext';
 export default function SearchModal({ appProps }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
-  const modalRef = useRef(null);
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
@@ -28,44 +27,22 @@ export default function SearchModal({ appProps }) {
   const handleChanges = (e) => {
     setKeyword(e.target.value);
     setSelectItem(0);
-  };
+  }
 
-  /** This helper function clears search box and all suggestions */
-  const clearSearchModal = () => {
-    setSuggestions([...signedOutRoutes]);
-    setKeyword('');
-  };
-
-  const SuggestionsList = () => {
-    if (suggestions.length === 0) return <></>;
-
-    const topFiveItems = suggestions.slice(0, 5);
-    return (
-      <ul className='suggestion-list'>
-        {topFiveItems.map((r, index) => ( // Still keep index to keep track of the selected item
-          <li
-            key={r.path} // Use r.path as key
-            className={`suggestion-item ${index === selectItem ? 'active' : ''}`}
-            onMouseEnter={() => setSelectItem(index)}
-            onClick={() => {
-              window.location.href = r.path;
-              setOpen(false);
-            }}
-          >
-            <span style={{ marginRight: '0.5rem' }}>
-              {r.type === 'user' ? '👤' : '📄'}
-            </span>
-            <div className='text-wrapper'>
-              {r.pageName}
-              <div className='hidden-tab'>
-                {selectItem === index && `${window.location.origin}${r.path}`}
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  };
+  async function getUserData() {
+    try {
+      const apiResponse = await getAllUsers({
+        token: props.user.token,
+        query: keyword,
+        page: 0,
+        sortColumn: 'firstName',
+        sortOrder: 'asc'
+      });
+      setUsers(apiResponse.responseData.items);
+    } catch (error) {
+      alert(error.message);
+    }
+  }
 
   /**
    * An effect that instantly shows all hardcoded routes.
@@ -74,23 +51,33 @@ export default function SearchModal({ appProps }) {
   useEffect(() => {
     if (!open) return;
 
-    // Return if keyword is blank
-    if (!keyword) {
-      setSuggestions([...signedOutRoutes]);
-      return;
-    }
+    const debounce = setTimeout(() => {
+      if (props.user.accessLevel >= membershipState.OFFICER) getUserData();
+      const matches = [
+        ...routes.filter((r) =>
+          r.pageName?.toLowerCase().includes(keyword.toLowerCase())
+        ),
+        // Filter users by name or email
+        ...users.filter((user) => {
+          const searchKey = keyword.toLowerCase();
+          return (
+            user.firstName?.toLowerCase().includes(searchKey) ||
+            user.lastName?.toLowerCase().includes(searchKey) ||
+            user.email?.toLowerCase().includes(searchKey)
+          );
+        }).map((user) => ({
+          pageName: `${user.firstName} ${user.lastName} (${user.email})`,
+          path: `/user/edit/${user._id}`,
+          type: 'user'
+        }))
+      ];
 
-    // Instantly display for the hardcoded page recommendations
-    const routeMatches = routes.filter((r) =>
-      r.pageName?.toLowerCase().includes(keyword.toLowerCase())
-    );
-    setSuggestions(routeMatches);
-  }, [open, keyword, routes]);
+      setSuggestions(matches);
+    }, 800);
 
-  /**
-   * Executes a search when Enter is pressed
-   * @dependencies selectItem, suggestions
-   */
+    return () => clearTimeout(debounce);
+  }, [keyword, routes, open]);
+
   const handleSearch = useCallback(() => {
     if (suggestions.length === 0) return; // Check if suggestions is empty
 
@@ -175,7 +162,7 @@ export default function SearchModal({ appProps }) {
           onChange={handleChanges} />
 
         {suggestions.length > 0 && (
-          <ul className={`${style['suggestion-list']} ${style['scrollable-list']}`}>
+          <ul className={style['suggestion-list']}>
             {suggestions.map((r, index) => (
               <li
                 key={index}
@@ -193,7 +180,7 @@ export default function SearchModal({ appProps }) {
                 {r.pageName}
                 <div className={style['hidden-tab']}>{selectItem === index && r.path}</div>
               </li>
-            ))}
+            )).slice(0, 5)}
           </ul>
         )}
       </div>
