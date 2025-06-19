@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import './SearchModal.css';
-import { officerOrAdminRoutes, signedOutRoutes, memberRoutes, notAuthenticatedRoutes } from '../../Routes';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import style from './SearchModal.module.css';
+import { officerSignedInRoutes, signedOutRoutes, memberSignedInRoutes } from '../../RouteConfig';
 import { membershipState } from '../../Enums';
 import { useUser } from '../context/UserContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,32 +12,14 @@ export default function SearchModal({ appProps }) {
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
-  const { user } = useUser();
-  const [errorMsg, setErrorMsg] = useState('');
-  const { authenticated } = useAuth();
+  let routes = [];
+  const [users, setUsers] = useState([]);
 
-  /**
-   * Returns the appropriate routes array based on the user's access level.
-   * @dependencies user.accessLevel, authenticated
-   */
-  const routes = useMemo(() => {
-    if (user.accessLevel === membershipState.MEMBER)
-      return [
-        ...memberRoutes.filter(r => r.pageName !== 'Edit User Info'),
-        ...signedOutRoutes
-      ];
-    if (user.accessLevel >= membershipState.OFFICER)
-      return [
-        ...officerOrAdminRoutes.filter(r => r.pageName !== 'Edit User Info'),
-        ...signedOutRoutes
-      ];
-    if (!authenticated)
-      return [
-        ...notAuthenticatedRoutes,
-        ...signedOutRoutes
-      ];
-    return [...signedOutRoutes];
-  }, [user.accessLevel, authenticated]);
+  if (props.user.accessLevel === membershipState.MEMBER) {
+    routes = [...memberSignedInRoutes, ...signedOutRoutes];
+  } else if (props.user.accessLevel >= membershipState.OFFICER) {
+    routes = [...officerSignedInRoutes, ...memberSignedInRoutes, ...signedOutRoutes, ...users];
+  } else routes = [...signedOutRoutes];
 
   /**
    * Helper function updates the keyword when the user types
@@ -184,19 +166,36 @@ export default function SearchModal({ appProps }) {
   if (!open) return null;
 
   return (
-    <div className='shortcut-search-modal'>
-      <div ref={modalRef}>
-        <div className='input-wrapper'>
-          <input
-            ref={inputRef}
-            placeholder="Search here... (Ctrl + k)"
-            value={keyword}
-            onChange={handleChanges} />
-          <SuggestionsList />
-        </div>
-        <div>
-          {errorMsg && <p>{errorMsg}</p>}
-        </div>
+    <div className={style['modal']}>
+      <div className={style['input-wrapper']}>
+        <input
+          ref={inputRef}
+          placeholder="Search here"
+          value={keyword}
+          onChange={handleChanges} />
+
+        {suggestions.length > 0 && (
+          <ul className={style['suggestion-list']}>
+            {suggestions.map((r, index) => (
+              <li
+                key={index}
+                className={`${style['suggestion-item']} ${index === selectItem ? style['active'] : ''}`}
+                onMouseEnter={() => setSelectItem(index)}
+                onClick={() => {
+                  window.location.href = r.path;
+                  setOpen(false);
+                }}
+              >
+
+                <span style={{ marginRight: '0.5rem' }}>
+                  {r.type === 'user' ? '👤' : '📄'}
+                </span>
+                {r.pageName}
+                <div className={style['hidden-tab']}>{selectItem === index && r.path}</div>
+              </li>
+            )).slice(0, 5)}
+          </ul>
+        )}
       </div>
     </div>
   );

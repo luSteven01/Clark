@@ -5,9 +5,8 @@ import './index.css';
 
 import Routing from './Routing';
 import { checkIfUserIsSignedIn } from './APIFunctions/Auth';
-import { UserContext } from './Components/context/UserContext';
-import SearchModal from './Components/ShortcutKeyModal/SearchModal';
-import { AuthContext } from './Components/context/AuthContext';
+// import SearchModal from './Components/ShortcutKeyModal/SearchModal';
+
 
 function App(props) {
   const [authenticated, setAuthenticated] = useState(false);
@@ -18,7 +17,7 @@ function App(props) {
     setIsAuthenticating(true);
     const authStatus = await checkIfUserIsSignedIn();
     setAuthenticated(!authStatus.error);
-    setUser({ token: authStatus.token, ...authStatus.responseData});
+    setUser({ token: authStatus.token, ...authStatus.responseData });
     setIsAuthenticating(false);
   }
 
@@ -29,14 +28,10 @@ function App(props) {
 
   return (
     !isAuthenticating && (
-      <UserContext.Provider value={{ user, setUser }}>
-        <AuthContext.Provider value={{ authenticated, setAuthenticated }}>
-          <BrowserRouter>
-            <SearchModal/>
-            <Routing/>
-          </BrowserRouter>
-        </AuthContext.Provider>
-      </UserContext.Provider>
+      <BrowserRouter>
+        {/* <SearchModal user={ user } /> */}
+        <Routing appProps={{ authenticated, setAuthenticated, user }} />
+      </BrowserRouter>
     )
   );
 }
