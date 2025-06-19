@@ -1,140 +1,107 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import './SearchModal.css';
-import { officerOrAdminRoutes, signedOutRoutes, memberRoutes, notAuthenticatedRoutes } from '../../Routes';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import style from './SearchModal.module.css';
+import { officerSignedInRoutes, signedOutRoutes, memberSignedInRoutes } from '../../RouteConfig';
 import { membershipState } from '../../Enums';
-import { useUser } from '../context/UserContext';
-import { useAuth } from '../context/AuthContext';
+import { getAllUsers } from '../../APIFunctions/User';
 
-export default function SearchModal({ appProps }) {
+export default function SearchModal(props) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
-  const modalRef = useRef(null);
+  const prevKeyword = useRef('');
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
-  const { user } = useUser();
-  const [errorMsg, setErrorMsg] = useState('');
+  let routes = [];
+  const [users, setUsers] = useState([]);
 
-  const routes = useMemo(() => {
-    if (user.accessLevel === membershipState.MEMBER) return [...memberRoutes, ...signedOutRoutes];
-    if (user.accessLevel >= membershipState.OFFICER) return [...officerOrAdminRoutes, ...signedOutRoutes];
-    if (!appProps.authenticated) return [...notAuthenticatedRoutes, ...signedOutRoutes];
-    return [...signedOutRoutes];
-  }, [user.accessLevel]);
+  if (props.user.accessLevel === membershipState.MEMBER) {
+    routes = [...memberSignedInRoutes, ...signedOutRoutes];
+  } else if (props.user.accessLevel >= membershipState.OFFICER) {
+    routes = [...officerSignedInRoutes, ...memberSignedInRoutes, ...signedOutRoutes, ...users];
+  } else routes = [...signedOutRoutes];
 
-  /**
-   * Helper function updates the keyword when the user types
-   * @param e - The input change event
-   */
-  const handleChanges = (e) => {
+  function handleChanges(e) {
     setKeyword(e.target.value);
     setSelectItem(0);
   };
 
-  /** This helper function clears search box and all suggestions */
-  const clearSearchModal = () => {
-    setSuggestions([...signedOutRoutes]);
-    setKeyword('');
-  };
-
-  const SuggestionsList = () => {
-    if (suggestions.length === 0) return <></>;
-
-    const topFiveItems = suggestions.slice(0, 5);
-    return (
-      <ul className='suggestion-list'>
-        <p className='suggestion-item italic dark:text-gray-300'>Get Started</p>
-        {topFiveItems.map((r, index) => ( // Still keep index to keep track of the selected item
-          <li
-            key={r.path} // Use r.path as key
-            className={`suggestion-item ${index === selectItem ? 'active' : ''}`}
-            onMouseEnter={() => setSelectItem(index)}
-            onClick={() => {
-              window.location.href = r.path;
-              setOpen(false);
-            }}
-          >
-            <span style={{ marginRight: '0.5rem' }}>
-              {r.type === 'user' ? '👤' : '📄'}
-            </span>
-            <div className='text-wrapper'>
-              {r.pageName}
-              <div className='hidden-tab'>
-                {selectItem === index && `${window.location.origin}${r.path}`}
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  };
+  async function getUserData() {
+    try {
+      const apiResponse = await getAllUsers({
+        token: props.user.token,
+        query: keyword,
+        page: 0,
+        sortColumn: 'firstName',
+        sortOrder: 'asc'
+      });
+      setUsers(apiResponse.responseData.items);
+      // console.log('api fetch') // For debug
+    } catch (error) {
+      alert(error.message);
+    }
+  }
 
   /**
-   * An effect that instantly shows all hardcoded routes.
-   * @dependencies keyword, routes, open
-   * An effect that instantly shows all hardcoded routes.
-   * @dependencies keyword, routes, open
+   * A debounce function that performs the search 800ms after the user stops typing.
+   * @dependencies keyword, routes
    */
   useEffect(() => {
     if (!open) return;
 
-    // Return if keyword is blank
-    if (!keyword) {
-      setSuggestions([...signedOutRoutes]);
-      return;
-    }
+    const debounce = setTimeout(() => {
+      // Only fetch users when there is a change in keyword
+      if (props.user.accessLevel >= membershipState.OFFICER && prevKeyword.current !== keyword) {
+        getUserData();
+        prevKeyword.current = keyword; // Update previous keyword after fetching for new data
+      }
+      const matches = [
+        ...routes.filter((r) =>
+          r.pageName?.toLowerCase().includes(keyword.toLowerCase())
+        ),
+        // Filter users by name or email
+        ...users.filter((user) => {
+          const searchKey = keyword.toLowerCase();
+          return (
+            user.firstName?.toLowerCase().includes(searchKey) ||
+            user.lastName?.toLowerCase().includes(searchKey) ||
+            user.email?.toLowerCase().includes(searchKey)
+          );
+        }).map((user) => ({
+          pageName: `${user.firstName} ${user.lastName} (${user.email})`,
+          path: `/user/edit/${user._id}`,
+          type: 'user'
+        }))
+      ];
 
-    // Instantly display for the hardcoded page recommendations
-    const routeMatches = routes.filter((r) =>
-      r.pageName?.toLowerCase().includes(keyword.toLowerCase())
-    );
-    setSuggestions(routeMatches);
-  }, [open, keyword, routes]);
+      setSuggestions(matches);
+    }, 400);
 
-  /**
-   * Executes a search when Enter is pressed
-   * @dependencies selectItem, suggestions
-   */
+    return () => clearTimeout(debounce);
+  }, [keyword, routes, open]);
+
   const handleSearch = useCallback(() => {
-    if (suggestions.length === 0) return; // Check if suggestions is empty
-
     const target = suggestions[selectItem];
+
     if (target && target.path) {
       window.location.href = target.path;
       setOpen(false);
-      clearSearchModal();
-      clearSearchModal();
     }
+
   }, [suggestions, selectItem]);
 
-  /**
-   * Listens for keyboard input and executes shortcut actions.
-   * @dependencies open, suggestions, selectItem
-   */
   useEffect(() => {
     const listener = (e) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'k')) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || (e.key === 'K'))) {
         e.preventDefault();
         setOpen(prev => !prev);
-        if (!open) {
-          clearSearchModal();
-        }
-        if (!open) {
-          clearSearchModal();
-        }
       } else if (e.key === 'Escape') {
         setOpen(false);
-        clearSearchModal();
-        clearSearchModal();
       } else if (e.key === 'Enter' && open) {
         e.preventDefault();
         handleSearch();
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        if (suggestions.length > 0) {
-          const minLength = Math.min(suggestions.length - 1, 4);
-          setSelectItem(prev => Math.min(prev + 1, minLength));
-        }
+        if (suggestions.length > 0) setSelectItem(prev => Math.min(prev + 1, suggestions.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectItem(prev => Math.max(prev - 1, 0));
@@ -151,43 +118,39 @@ export default function SearchModal({ appProps }) {
     }
   }, [open]);
 
-  /**
-   * Listens for mouse input and closes the search modal when the user clicks outside the modal content.
-   * @dependencies open
-   */
-  useEffect(() => {
-    const clickOut = (e) => {
-      if (modalRef.current && !modalRef.current?.contains(e.target)) {
-        setOpen(false);
-        clearSearchModal();
-      }
-    };
-
-    if (open) {
-      window.addEventListener('mousedown', clickOut);
-    }
-
-    return () => {
-      window.removeEventListener('mousedown', clickOut);
-    };
-  }, [open]);
-
   if (!open) return null;
 
   return (
-    <div className='shortcut-search-modal'>
-      <div ref={modalRef}>
-        <div className='input-wrapper'>
-          <input
-            ref={inputRef}
-            placeholder="Search here... (Ctrl + k)"
-            value={keyword}
-            onChange={handleChanges} />
-          <SuggestionsList />
-        </div>
-        <div>
-          {errorMsg && <p>{errorMsg}</p>}
-        </div>
+    <div className={style['modal']}>
+      <div className={style['input-wrapper']}>
+        <input
+          ref={inputRef}
+          placeholder="Search here"
+          value={keyword}
+          onChange={handleChanges} />
+
+        {suggestions.length > 0 && (
+          <ul className={style['suggestion-list']}>
+            {suggestions.map((r, index) => (
+              <li
+                key={index}
+                className={`${style['suggestion-item']} ${index === selectItem ? style['active'] : ''}`}
+                onMouseEnter={() => setSelectItem(index)}
+                onClick={() => {
+                  window.location.href = r.path;
+                  setOpen(false);
+                }}
+              >
+
+                <span style={{ marginRight: '0.5rem' }}>
+                  {r.type === 'user' ? '👤' : '📄'}
+                </span>
+                {r.pageName}
+                <div className={style['hidden-tab']}>{selectItem === index && r.path}</div>
+              </li>
+            )).slice(0, 5)}
+          </ul>
+        )}
       </div>
     </div>
   );
