@@ -11,8 +11,6 @@ export default function Routing({ appProps }) {
   const { user, setUser } = useUser();
   const userIsAuthenticated = appProps.authenticated;
 
-  const routes = [...officerSignedInRoutes, ...memberSignedInRoutes];
-
   return (
     <div>
       <Switch>
