@@ -68,7 +68,7 @@ export default function SearchModal({ appProps }) {
    * @dependencies keyword, routes
    */
   useEffect(() => {
-    if (!open || user.accessLevel < membershipState.OFFICER) return;
+    if (!open || !user.accessLevel || user?.accessLevel < membershipState.OFFICER) return;
 
     const debounce = setTimeout(() => {
       // Only fetch users when there is a change in keyword
@@ -79,7 +79,7 @@ export default function SearchModal({ appProps }) {
     }, 400);
 
     return () => clearTimeout(debounce);
-  }, [keyword, open]);
+  }, [keyword, open, user.accessLevel]);
 
   /**
    * Combines hardcoded route suggestions with user search results
@@ -142,10 +142,7 @@ export default function SearchModal({ appProps }) {
         handleSearch();
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        if (suggestions.length > 0) {
-          const minLength = Math.min(suggestions.length - 1, 4);
-          setSelectItem(prev => Math.min(prev + 1, minLength));
-        }
+        if (suggestions.length > 0) setSelectItem(prev => Math.min(prev + 1, 4));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectItem(prev => Math.max(prev - 1, 0));
