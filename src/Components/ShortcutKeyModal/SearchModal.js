@@ -107,7 +107,7 @@ export default function SearchModal({ appProps }) {
       );
     }).map((u) => ({
       pageName: `${u.firstName} ${u.lastName} (${u.email})`,
-      path: `/user/edit/${u._id}`,
+      path: `${window.location.origin}/user/edit/${u._id}`,
       type: 'user'
     }));
 
