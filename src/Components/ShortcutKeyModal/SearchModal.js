@@ -37,7 +37,7 @@ export default function SearchModal(props) {
         sortColumn: 'firstName',
         sortOrder: 'asc'
       });
-      setUsers(apiResponse.responseData.items);
+      if (!apiResponse.error) setUsers(apiResponse.responseData.items);
       // console.log('api fetch') // For debug
     } catch (error) {
       setErrorMsg(error);
