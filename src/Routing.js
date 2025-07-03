@@ -22,7 +22,6 @@ export default function Routing({ appProps }) {
         {routes.map(
           ({
             path,
-            pageName,
             Component,
             allowedIf,
             redirect,
@@ -44,7 +43,6 @@ export default function Routing({ appProps }) {
                 key={index}
                 exact
                 path={path}
-                pageName={pageName}
                 appProps={{
                   allowed: allowedIf,
                   redirect,
@@ -56,13 +54,12 @@ export default function Routing({ appProps }) {
             );
           }
         )}
-        {signedOutRoutes.map(({ path, pageName, Component }, index) => {
+        {signedOutRoutes.map(({ path, Component }, index) => {
           return (
             <Route
               key={index}
               exact
               path={path}
-              pageName={pageName}
               render={props => (
                 <NavBarWrapper component={Component} {...props} {...appProps} />
               )}
