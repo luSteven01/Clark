@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import style from './SearchModal.module.css';
+// import style from './SearchModal.module.css';
 import { officerOrAdminRoutes, signedOutRoutes, memberRoutes, notAuthenticatedRoutes } from '../../Routes';
 import { membershipState } from '../../Enums';
 import { getAllUsers } from '../../APIFunctions/User';
@@ -28,21 +28,30 @@ export default function SearchModal({ appProps }) {
     setSelectItem(0);
   }
 
-  async function getUserData() {
-    try {
-      // console.log("copy this token for testing:", user.token); // For debug
-      const apiResponse = await getAllUsers({
-        token: user.token,
-        query: keyword,
-        page: 0,
-        sortColumn: 'firstName',
-        sortOrder: 'asc'
-      });
-      if (!apiResponse.error) setUsers(apiResponse.responseData.items);
-      // console.log('api fetch') // For debug
-    } catch (error) {
-      setErrorMsg(error);
-    }
+  function getSuggestions() {
+    if (suggestions.length === 0) return <></>;
+
+    return (
+          <ul className='suggestion-list'>
+            {suggestions.map((r, index) => (
+              <li
+                key={index}
+                className={`'suggestion-item' ${index === selectItem ? 'active' : ''}`}
+                onMouseEnter={() => setSelectItem(index)}
+                onClick={() => {
+                  window.location.href = r.path;
+                  setOpen(false);
+                }}
+              >
+                <span style={{ marginRight: '0.5rem' }}>
+                  {r.type === 'user' ? '👤' : '📄'}
+                </span>
+                {r.pageName}
+                <div className='hidden-tab'>{selectItem === index && `${window.location.origin}${r.path}`}</div>
+              </li>
+            )).slice(0, 5)}
+          </ul>
+    )
   }
 
   /**
@@ -160,16 +169,18 @@ export default function SearchModal({ appProps }) {
   if (!open) return null;
 
   return (
-    <div className={style['modal']}>
-      <div className={style['input-wrapper']}>
+    <div className='search-modal'>
+      <div className='input-wrapper'>
         <input
           ref={inputRef}
           placeholder="Search here"
           value={keyword}
           onChange={handleChanges} />
 
-        {suggestions.length > 0 && (
-          <ul className={`${style['suggestion-list']} ${style['scrollable-list']}`}>
+        {getSuggestions()}
+
+        {/* {suggestions.length > 0 && (
+          <ul className={`${style['suggestion-list']}`}>
             {suggestions.map((r, index) => (
               <li
                 key={index}
@@ -189,7 +200,10 @@ export default function SearchModal({ appProps }) {
               </li>
             ))}
           </ul>
-        )}
+        )} */}
+      </div>
+      <div>
+        {errorMsg && <p>{errorMsg}</p>}
       </div>
     </div>
   );
