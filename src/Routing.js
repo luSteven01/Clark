@@ -19,7 +19,7 @@ export default function Routing({ appProps }) {
   return (
     <div>
       <Switch>
-        {routes.map(
+        {signedInRoutes.map(
           ({
             path,
             Component,

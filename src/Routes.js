@@ -1,16 +1,3 @@
-<<<<<<< HEAD
-=======
-<<<<<<<< HEAD:src/RouteConfig.js
-import Overview from './Pages/Overview/Overview';
-import Login from './Pages/Login/Login';
-import ForgotPassword from './Pages/ForgotPassword/ForgotPassword';
-import ResetPasswordPage from './Pages/ForgotPassword/ResetPassword';
-import Profile from './Pages/Profile/MemberView/Profile';
-import LedSign from './Pages/LedSign/LedSign';
-// import SpeakerPage from './Pages/Speaker/Speaker';
-import EditUserInfo from './Pages/UserManager/EditUserInfo';
-========
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
 import Overview from './Pages/Overview/Overview.js';
 import Login from './Pages/Login/Login.js';
 import ForgotPassword from './Pages/ForgotPassword/ForgotPassword.js';
@@ -18,10 +5,6 @@ import ResetPasswordPage from './Pages/ForgotPassword/ResetPassword.js';
 import Profile from './Pages/Profile/MemberView/Profile.js';
 import LedSign from './Pages/LedSign/LedSign.js';
 import EditUserInfo from './Pages/UserManager/EditUserInfo.js';
-<<<<<<< HEAD
-=======
->>>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors):src/Routes.js
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
 import MembershipApplication from './Pages/MembershipApplication/MembershipApplication.js';
 import VerifyEmailPage from './Pages/MembershipApplication/VerifyEmail.js';
 import Printing from './Pages/2DPrinting/2DPrinting.js';
@@ -32,11 +15,6 @@ import URLShortenerPage from './Pages/URLShortener/URLShortener.js';
 import EmailPreferencesPage from './Pages/EmailPreferences/EmailPreferences.js';
 import sendUnsubscribeEmail from './Pages/Profile/admin/SendUnsubscribeEmail.js';
 import Messaging from './Pages/Messaging/Messaging.js';
-<<<<<<< HEAD
-=======
-// import DessertPage from './Pages/Desserts/Desserts.js';
-// import DessertAdminPage from './Pages/Desserts/DessertsAdmin.js';
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
 import Home from './Pages/Home/Home.js';
 import CardReader from './Pages/CardReader/CardReader.js';
 
@@ -48,12 +26,6 @@ export const allowedIf = {
   OFFICER_OR_ADMIN: 'OFFICER_OR_ADMIN',
 };
 
-<<<<<<< HEAD
-=======
-<<<<<<<< HEAD:src/RouteConfig.js
-export const officerSignedInRoutes = [
-========
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
 export const notAuthenticatedRoutes = [
   {
     Component: Login,
@@ -110,19 +82,11 @@ export const memberRoutes = [
 ];
 
 export const officerOrAdminRoutes = [
-<<<<<<< HEAD
-=======
->>>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors):src/Routes.js
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
   // new for Overview
   {
     Component: Overview,
     path: '/user-manager',
-<<<<<<< HEAD
     pageName: 'User Manager',
-=======
-    pageName: 'user manager',
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
     allowedIf: allowedIf.OFFICER_OR_ADMIN,
     redirect: '/',
     inAdminNavbar: true
@@ -143,17 +107,6 @@ export const officerOrAdminRoutes = [
     redirect: '/',
     inAdminNavbar: true
   },
-<<<<<<< HEAD
-=======
-  // {
-  //   Component: SpeakerPage,
-  //   path: '/speakers',
-  //   pageName: 'Speaker',
-  //   allowedIf: allowedIf.OFFICER_OR_ADMIN,
-  //   redirect: '/',
-  //   inAdminNavbar: true
-  // },
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
   {
     Component: EditUserInfo,
     path: '/user/edit/:id',
@@ -186,17 +139,6 @@ export const officerOrAdminRoutes = [
     redirect: '/',
     inAdminNavbar: true
   },
-<<<<<<< HEAD
-=======
-  // {
-  //   Component: DessertAdminPage,
-  //   path: '/dessert-admin',
-  //   pageName: 'Dessert Admin',
-  //   allowedIf: allowedIf.OFFICER_OR_ADMIN,
-  //   redirect: '/',
-  //   inAdminNavbar: true
-  // },
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
   {
     Component: CardReader,
     path: '/card-reader',
@@ -205,7 +147,6 @@ export const officerOrAdminRoutes = [
     redirect: '/',
     inAdminNavbar: true
   },
-<<<<<<< HEAD
   ...memberRoutes,
 ];
 
@@ -241,90 +182,3 @@ export const signedOutRoutes = [
     pageName: 'Email Preferences'
   },
 ];
-=======
-];
-
-export const memberSignedInRoutes = [
-  {
-    Component: Printing,
-    path: '/2DPrinting',
-    pageName: '2D Printing',
-    allowedIf: allowedIf.MEMBER,
-    redirect: '/login'
-  },
-  {
-    Component: Login,
-    path: '/login*',
-    pageName: 'Login',
-    allowedIf: allowedIf.UNAUTHENTICATED,
-    redirect: '/',
-    queryParams: {
-      redirect: 'redirect',
-    },
-  },
-  {
-    Component: ForgotPassword,
-    path: '/forgot',
-    pageName: 'Forgot Password',
-    allowedIf: allowedIf.UNAUTHENTICATED,
-    redirect: '/'
-  },
-  {
-    Component: MembershipApplication,
-    path: '/register',
-    pageName: 'Sign Up',
-    allowedIf: allowedIf.UNAUTHENTICATED,
-    redirect: '/'
-  },
-  {
-    Component: Profile,
-    path: '/profile',
-    pageName: 'Profile',
-    allowedIf: allowedIf.AUTHENTICATED,
-    redirect: '/login'
-  },
-  {
-    Component: Messaging,
-    path: '/messaging/:id?',
-    pageName: 'Messaging',
-    allowedIf: allowedIf.MEMBER,
-    redirect: '/login'
-  },
-  // {
-  //   Component: DessertPage,
-  //   path: '/desserts',
-  //   pageName: 'Desserts View Page',
-  //   allowedIf: allowedIf.AUTHENTICATED,
-  //   redirect: '/',
-  //   inAdminNavbar: false
-  // },
-];
-
-export const signedOutRoutes = [
-  { Component: Home,
-    path: '/',
-    pageName: 'Home Page' },
-  { Component: VerifyEmailPage,
-    path: '/verify',
-    pageName: 'Verify Email' },
-  { Component: ResetPasswordPage,
-    path: '/reset',
-    pageName: 'Reset Password' },
-  { Component: AboutPage,
-    path: '/about',
-    pageName: 'About Us' },
-  { Component: ProjectsPage,
-    path: '/projects',
-    pageName: 'Projects' },
-  { Component: EmailPreferencesPage,
-    path: '/emailPreferences',
-<<<<<<<< HEAD:src/RouteConfig.js
-    pageName: 'Email Preferences' },
-];
-
-========
-    pageName: 'Email Preferences'
-  },
-];
->>>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors):src/Routes.js
->>>>>>> f683177 (Changed RouteConfig.js to Routes.js and fixed linting errors)
