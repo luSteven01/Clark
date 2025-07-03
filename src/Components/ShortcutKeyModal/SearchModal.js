@@ -54,6 +54,21 @@ export default function SearchModal({ appProps }) {
     )
   }
 
+  async function getUserData() {
+    try {
+      const apiResponse = await getAllUsers({
+        token: user.token,
+        query: keyword,
+        page: 0,
+        sortColumn: 'firstName',
+        sortOrder: 'asc'
+      });
+      if (!apiResponse.error) setUsers(apiResponse.responseData.items);
+    } catch (error) {
+      setErrorMsg(error);
+    }
+  }
+
   /**
    * An effect that instantly shows all hardcoded routes.
    * @dependencies keyword, routes, open
