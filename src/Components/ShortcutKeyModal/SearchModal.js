@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 export default function SearchModal({ appProps }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
+  const modalRef = useRef(null);
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
@@ -28,6 +29,12 @@ export default function SearchModal({ appProps }) {
   const handleChanges = (e) => {
     setKeyword(e.target.value);
     setSelectItem(0);
+  }
+
+  /** This function clears search box and all suggestions */
+  function clearSearchModal() {
+    setSuggestions([]);
+    setKeyword('');
   }
 
   function getSuggestions() {
@@ -91,6 +98,7 @@ export default function SearchModal({ appProps }) {
       window.location.href = target.path;
       setOpen(false);
       clearSearchModal();
+      clearSearchModal();
     }
   }, [suggestions, selectItem]);
 
@@ -106,8 +114,12 @@ export default function SearchModal({ appProps }) {
         if (!open) {
           clearSearchModal();
         }
+        if (!open) {
+          clearSearchModal();
+        }
       } else if (e.key === 'Escape') {
         setOpen(false);
+        clearSearchModal();
         clearSearchModal();
       } else if (e.key === 'Enter' && open) {
         e.preventDefault();
@@ -139,12 +151,12 @@ export default function SearchModal({ appProps }) {
    * @dependencies open
    */
   useEffect(() => {
-    const clickOut = (e) => {
+    function clickOut(e) {
       if (modalRef.current && !modalRef.current?.contains(e.target)) {
         setOpen(false);
         clearSearchModal();
       }
-    };
+    }
 
     if (open) {
       window.addEventListener('mousedown', clickOut);
@@ -159,17 +171,19 @@ export default function SearchModal({ appProps }) {
 
   return (
     <div className='shortcut-search-modal'>
-      <div className='input-wrapper'>
-        <input
-          ref={inputRef}
-          placeholder="Search here"
-          value={keyword}
-          onChange={handleChanges} />
+      <div ref={modalRef}>
+        <div className='input-wrapper'>
+          <input
+            ref={inputRef}
+            placeholder="Search here"
+            value={keyword}
+            onChange={handleChanges} />
 
-        {getSuggestions()}
-      </div>
-      <div>
-        {errorMsg && <p>{errorMsg}</p>}
+          {getSuggestions()}
+        </div>
+        <div>
+          {errorMsg && <p>{errorMsg}</p>}
+        </div>
       </div>
     </div>
   );
