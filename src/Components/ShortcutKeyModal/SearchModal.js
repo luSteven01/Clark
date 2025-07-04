@@ -28,45 +28,41 @@ export default function SearchModal({ appProps }) {
     setSelectItem(0);
   }
 
+  /** This function clears search box and all suggestions */
+  function clearSearchModal() {
+    setSuggestions([...signedOutRoutes]);
+    setKeyword('');
+  }
+
   function getSuggestions() {
     if (suggestions.length === 0) return <></>;
 
     return (
-          <ul className='suggestion-list'>
-            {suggestions.map((r, index) => (
-              <li
-                key={index}
-                className={`'suggestion-item' ${index === selectItem ? 'active' : ''}`}
-                onMouseEnter={() => setSelectItem(index)}
-                onClick={() => {
-                  window.location.href = r.path;
-                  setOpen(false);
-                }}
-              >
-                <span style={{ marginRight: '0.5rem' }}>
-                  {r.type === 'user' ? '👤' : '📄'}
-                </span>
-                {r.pageName}
-                <div className='hidden-tab'>{selectItem === index && `${window.location.origin}${r.path}`}</div>
-              </li>
-            )).slice(0, 5)}
-          </ul>
-    )
-  }
-
-  async function getUserData() {
-    try {
-      const apiResponse = await getAllUsers({
-        token: user.token,
-        query: keyword,
-        page: 0,
-        sortColumn: 'firstName',
-        sortOrder: 'asc'
-      });
-      if (!apiResponse.error) setUsers(apiResponse.responseData.items);
-    } catch (error) {
-      setErrorMsg(error);
-    }
+      <ul className='suggestion-list'>
+        <p className='suggestion-item italic dark:text-gray-300'>Get Started</p>
+        {topFiveItems.map((r, index) => ( // Still keep index to keep track of the selected item
+          <li
+            key={r.path} // Use r.path as key
+            className={`suggestion-item ${index === selectItem ? 'active' : ''}`}
+            onMouseEnter={() => setSelectItem(index)}
+            onClick={() => {
+              window.location.href = r.path;
+              setOpen(false);
+            }}
+          >
+            <span style={{ marginRight: '0.5rem' }}>
+              {r.type === 'user' ? '👤' : '📄'}
+            </span>
+            <div className='text-wrapper'>
+              {r.pageName}
+              <div className='hidden-tab'>
+                {selectItem === index && `${window.location.origin}${r.path}`}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
   }
 
   /**
@@ -78,7 +74,7 @@ export default function SearchModal({ appProps }) {
 
     // Return if keyword is blank
     if (!keyword) {
-      setSuggestions([]);
+      setSuggestions([...signedOutRoutes]);
       return;
     }
 
@@ -185,12 +181,13 @@ export default function SearchModal({ appProps }) {
 
   return (
     <div className='shortcut-search-modal'>
-      <div className='input-wrapper'>
-        <input
-          ref={inputRef}
-          placeholder="Search here"
-          value={keyword}
-          onChange={handleChanges} />
+      <div ref={modalRef}>
+        <div className='input-wrapper'>
+          <input
+            ref={inputRef}
+            placeholder="Search here... (Ctrl + k)"
+            value={keyword}
+            onChange={handleChanges} />
 
         {getSuggestions()}
 
@@ -220,6 +217,7 @@ export default function SearchModal({ appProps }) {
       <div>
         {errorMsg && <p>{errorMsg}</p>}
       </div>
+    </div>
     </div>
   );
 }
