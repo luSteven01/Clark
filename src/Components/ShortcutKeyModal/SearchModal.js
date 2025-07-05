@@ -29,15 +29,15 @@ export default function SearchModal({ appProps }) {
   const handleChanges = (e) => {
     setKeyword(e.target.value);
     setSelectItem(0);
-  }
+  };
 
-  /** This function clears search box and all suggestions */
-  function clearSearchModal() {
+  /** This helper function clears search box and all suggestions */
+  const clearSearchModal = () => {
     setSuggestions([...signedOutRoutes]);
     setKeyword('');
-  }
+  };
 
-  function getSuggestions() {
+  const SuggestionsList = () => {
     if (suggestions.length === 0) return <></>;
 
     const topFiveItems = suggestions.slice(0, 5);
@@ -67,7 +67,7 @@ export default function SearchModal({ appProps }) {
         ))}
       </ul>
     );
-  }
+  };
 
   /**
    * An effect that instantly shows all hardcoded routes.
@@ -156,12 +156,12 @@ export default function SearchModal({ appProps }) {
    * @dependencies open
    */
   useEffect(() => {
-    function clickOut(e) {
+    const clickOut = (e) => {
       if (modalRef.current && !modalRef.current?.contains(e.target)) {
         setOpen(false);
         clearSearchModal();
       }
-    }
+    };
 
     if (open) {
       window.addEventListener('mousedown', clickOut);
@@ -183,8 +183,7 @@ export default function SearchModal({ appProps }) {
             placeholder="Search here... (Ctrl + k)"
             value={keyword}
             onChange={handleChanges} />
-
-          {getSuggestions()}
+          <SuggestionsList />
         </div>
         <div>
           {errorMsg && <p>{errorMsg}</p>}
