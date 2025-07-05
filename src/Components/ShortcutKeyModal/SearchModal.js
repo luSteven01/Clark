@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-// import style from './SearchModal.module.css';
+import './SearchModal.css';
 import { officerOrAdminRoutes, signedOutRoutes, memberRoutes, notAuthenticatedRoutes } from '../../Routes';
 import { membershipState } from '../../Enums';
 import { getAllUsers } from '../../APIFunctions/User';
@@ -8,6 +8,7 @@ import { useUser } from '../context/UserContext';
 export default function SearchModal({ appProps }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
+  const modalRef = useRef(null);
   const prevKeyword = useRef('');
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
@@ -23,20 +24,25 @@ export default function SearchModal({ appProps }) {
     return [...signedOutRoutes];
   }, [user.accessLevel, users]);
 
-  function handleChanges(e) {
+  /**
+   * Helper function updates the keyword when the user types
+   * @param e - The input change event
+   */
+  const handleChanges = (e) => {
     setKeyword(e.target.value);
     setSelectItem(0);
-  }
+  };
 
-  /** This function clears search box and all suggestions */
-  function clearSearchModal() {
+  /** This helper function clears search box and all suggestions */
+  const clearSearchModal = () => {
     setSuggestions([...signedOutRoutes]);
     setKeyword('');
-  }
+  };
 
-  function getSuggestions() {
+  const SuggestionsList = () => {
     if (suggestions.length === 0) return <></>;
 
+    const topFiveItems = suggestions.slice(0, 5);
     return (
       <ul className='suggestion-list'>
         <p className='suggestion-item italic dark:text-gray-300'>Get Started</p>
@@ -63,7 +69,25 @@ export default function SearchModal({ appProps }) {
         ))}
       </ul>
     );
-  }
+  };
+
+  /**
+   * Async function fetches all user data from the API
+   */
+  const getUserData = async () => {
+    try {
+      const apiResponse = await getAllUsers({
+        token: user.token,
+        query: keyword,
+        page: 0,
+        sortColumn: 'firstName',
+        sortOrder: 'asc'
+      });
+      if (!apiResponse.error) setUsers(apiResponse.responseData.items);
+    } catch (error) {
+      setErrorMsg(error);
+    }
+  };
 
   /**
    * An effect that instantly shows all hardcoded routes.
@@ -139,28 +163,40 @@ export default function SearchModal({ appProps }) {
    * @dependencies selectItem, suggestions
    */
   const handleSearch = useCallback(() => {
-    const target = suggestions[selectItem];
+    if (suggestions.length === 0) return; // Check if suggestions is empty
 
+    const target = suggestions[selectItem];
     if (target && target.path) {
       window.location.href = target.path;
       setOpen(false);
+      clearSearchModal();
     }
-
   }, [suggestions, selectItem]);
 
+  /**
+   * Listens for keyboard input and executes shortcut actions.
+   * @dependencies open, suggestions, selectItem
+   */
   useEffect(() => {
     const listener = (e) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || (e.key === 'K'))) {
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'k')) {
         e.preventDefault();
         setOpen(prev => !prev);
+        if (!open) {
+          clearSearchModal();
+        }
       } else if (e.key === 'Escape') {
         setOpen(false);
+        clearSearchModal();
       } else if (e.key === 'Enter' && open) {
         e.preventDefault();
         handleSearch();
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        if (suggestions.length > 0) setSelectItem(prev => Math.min(prev + 1, suggestions.length - 1));
+        if (suggestions.length > 0) {
+          const minLength = Math.min(suggestions.length - 1, 4);
+          setSelectItem(prev => Math.min(prev + 1, minLength));
+        }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectItem(prev => Math.max(prev - 1, 0));
@@ -177,6 +213,27 @@ export default function SearchModal({ appProps }) {
     }
   }, [open]);
 
+  /**
+   * Listens for mouse input and closes the search modal when the user clicks outside the modal content.
+   * @dependencies open
+   */
+  useEffect(() => {
+    function clickOut(e) {
+      if (modalRef.current && !modalRef.current?.contains(e.target)) {
+        setOpen(false);
+        clearSearchModal();
+      }
+    }
+
+    if (open) {
+      window.addEventListener('mousedown', clickOut);
+    }
+
+    return () => {
+      window.removeEventListener('mousedown', clickOut);
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -188,36 +245,12 @@ export default function SearchModal({ appProps }) {
             placeholder="Search here... (Ctrl + k)"
             value={keyword}
             onChange={handleChanges} />
-
-        {getSuggestions()}
-
-        {/* {suggestions.length > 0 && (
-          <ul className={`${style['suggestion-list']}`}>
-            {suggestions.map((r, index) => (
-              <li
-                key={index}
-                className={`${style['suggestion-item']} ${index === selectItem ? style['active'] : ''}`}
-                onMouseEnter={() => setSelectItem(index)}
-                onClick={() => {
-                  window.location.href = r.path;
-                  setOpen(false);
-                }}
-              >
-
-                <span style={{ marginRight: '0.5rem' }}>
-                  {r.type === 'user' ? '👤' : '📄'}
-                </span>
-                {r.pageName}
-                <div className={style['hidden-tab']}>{selectItem === index && r.path}</div>
-              </li>
-            ))}
-          </ul>
-        )} */}
+          <SuggestionsList />
+        </div>
+        <div>
+          {errorMsg && <p>{errorMsg}</p>}
+        </div>
       </div>
-      <div>
-        {errorMsg && <p>{errorMsg}</p>}
-      </div>
-    </div>
     </div>
   );
 }
