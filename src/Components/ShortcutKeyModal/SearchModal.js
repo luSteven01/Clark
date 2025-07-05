@@ -218,12 +218,12 @@ export default function SearchModal({ appProps }) {
    * @dependencies open
    */
   useEffect(() => {
-    function clickOut(e) {
+    const clickOut = (e) => {
       if (modalRef.current && !modalRef.current?.contains(e.target)) {
         setOpen(false);
         clearSearchModal();
       }
-    }
+    };
 
     if (open) {
       window.addEventListener('mousedown', clickOut);
