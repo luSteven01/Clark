@@ -9,6 +9,7 @@ export default function SearchModal({ appProps }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
   const modalRef = useRef(null);
+  const keywordRef = useRef('');
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
@@ -84,10 +85,19 @@ export default function SearchModal({ appProps }) {
     );
   };
 
+  useEffect(() => {
+    keywordRef.current = keyword;
+  }, [keyword]);
+
   /**
    * Async function fetches all user data from the API
    */
   const getUserData = async () => {
+    const currentKeyword = keywordRef.current;
+    if (currentKeyword !== keywordRef.current) {
+      return; // Abort, keyword has changed
+    }
+
     try {
       const apiResponse = await getAllUsers({
         token: user.token,
@@ -97,7 +107,7 @@ export default function SearchModal({ appProps }) {
 
       if (!apiResponse.error) {
         const userMatches = apiResponse.responseData.items.filter((u) => {
-          const searchKey = keyword.toLowerCase();
+          const searchKey = currentKeyword.toLowerCase();
           const fullname = `${u.firstName ?? ''} ${u.lastName ?? ''}`;
 
           return (
@@ -112,7 +122,9 @@ export default function SearchModal({ appProps }) {
           type: 'user'
         }));
 
-        setSuggestions(prev => [...prev, ...userMatches]);
+        if (currentKeyword === keywordRef.current) {
+          setSuggestions(prev => [...prev, ...userMatches]);
+        }
       }
     } catch (error) {
       setErrorMsg(error);
