@@ -61,7 +61,7 @@ export default function SearchModal({ appProps }) {
       <ul className='suggestion-list'>
         {topFiveItems.map((r, index) => ( // Still keep index to keep track of the selected item
           <li
-            key={`${r.type || 'route'} - ${r.path}`}// Use r.path as key
+            key={r.path} // Use r.path as key
             className={`suggestion-item ${index === selectItem ? 'active' : ''}`}
             onMouseEnter={() => setSelectItem(index)}
             onClick={() => {
