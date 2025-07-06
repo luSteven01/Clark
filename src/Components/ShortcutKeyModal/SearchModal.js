@@ -9,17 +9,15 @@ export default function SearchModal({ appProps }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
   const modalRef = useRef(null);
-  const prevKeyword = useRef('');
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
-  const [users, setUsers] = useState([]);
   const { user } = useUser();
   const [errorMsg, setErrorMsg] = useState('');
 
   /**
    * Returns the appropriate routes array based on the user's access level.
-   * @dependencies user.acccessLevel, users
+   * @dependencies user.accessLevel, appProps.authenticated
    */
   const routes = useMemo(() => {
     if (user.accessLevel === membershipState.MEMBER)
@@ -38,7 +36,7 @@ export default function SearchModal({ appProps }) {
         ...signedOutRoutes
       ];
     return [...signedOutRoutes];
-  }, [user.accessLevel, users]);
+  }, [user.accessLevel, appProps.authenticated]);
 
   /**
    * Helper function updates the keyword when the user types
@@ -63,7 +61,7 @@ export default function SearchModal({ appProps }) {
       <ul className='suggestion-list'>
         {topFiveItems.map((r, index) => ( // Still keep index to keep track of the selected item
           <li
-            key={r.path} // Use r.path as key
+            key={`${r.type || 'route'} - ${r.path}`}// Use r.path as key
             className={`suggestion-item ${index === selectItem ? 'active' : ''}`}
             onMouseEnter={() => setSelectItem(index)}
             onClick={() => {
@@ -93,12 +91,29 @@ export default function SearchModal({ appProps }) {
     try {
       const apiResponse = await getAllUsers({
         token: user.token,
-        query: keyword,
-        page: 0,
         sortColumn: 'firstName',
         sortOrder: 'asc'
       });
-      if (!apiResponse.error) setUsers(apiResponse.responseData.items);
+
+      if (!apiResponse.error) {
+        const userMatches = apiResponse.responseData.items.filter((u) => {
+          const searchKey = keyword.toLowerCase();
+          const fullname = `${u.firstName ?? ''} ${u.lastName ?? ''}`;
+
+          return (
+            u.firstName?.toLowerCase().includes(searchKey) ||
+            u.lastName?.toLowerCase().includes(searchKey) ||
+            u.email?.toLowerCase().includes(searchKey) ||
+            fullname.toLowerCase().includes(searchKey)
+          );
+        }).map((u) => ({
+          pageName: `${u.firstName} ${u.lastName} (${u.email})`,
+          path: `/user/edit/${u._id}`,
+          type: 'user'
+        }));
+
+        setSuggestions(prev => [...prev, ...userMatches]);
+      }
     } catch (error) {
       setErrorMsg(error);
     }
@@ -135,43 +150,11 @@ export default function SearchModal({ appProps }) {
       !keyword) return;
 
     const debounce = setTimeout(() => {
-      // Only fetch users when there is a change in keyword
-      if (prevKeyword.current !== keyword) {
-        getUserData();
-        prevKeyword.current = keyword; // Update previous keyword after fetching for new data
-      }
+      getUserData();
     }, 400);
 
     return () => clearTimeout(debounce);
   }, [keyword, open, user.accessLevel]);
-
-  /**
-   * Combines hardcoded route suggestions with user search results
-   * after the debounced fetch has updated the user list.
-   * Only runs when the user list is updated, and search is open.
-   * @dependencies open, users, keyword, routes, user.accessLevel
-   */
-  useEffect(() => {
-    if (!open ||
-      !user.accessLevel ||
-      user.accessLevel < membershipState.OFFICER ||
-      !keyword) return;
-
-    const userMatches = users.filter((u) => {
-      const searchKey = keyword.toLowerCase();
-      return (
-        u.firstName?.toLowerCase().includes(searchKey) ||
-        u.lastName?.toLowerCase().includes(searchKey) ||
-        u.email?.toLowerCase().includes(searchKey)
-      );
-    }).map((u) => ({
-      pageName: `${u.firstName} ${u.lastName} (${u.email})`,
-      path: `/user/edit/${u._id}`,
-      type: 'user'
-    }));
-
-    setSuggestions(prev => [...prev, ...userMatches]);
-  }, [open, users, keyword, routes, user.accessLevel]);
 
   /**
    * Executes a search when Enter is pressed
