@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import PrivateRoute from './Components/Routing/PrivateRoute';
@@ -8,14 +8,135 @@ import NotFoundPage from './Pages/NotFoundPage/NotFoundPage';
 
 import { useUser } from './Components/context/UserContext';
 
-import { officerOrAdminRoutes, notAuthenticatedRoutes, signedOutRoutes } from './Routes.js';
+import DessertPage from './Pages/Desserts/Desserts.js';
+import AdminDesserts from './Pages/Desserts/AdminDesserts.js';
 
 export default function Routing({ appProps }) {
   const { user, setUser } = useUser();
   const userIsAuthenticated = appProps.authenticated;
-
-  const signedInRoutes = [...officerOrAdminRoutes, ...notAuthenticatedRoutes];
-
+  const userIsMember =
+    userIsAuthenticated &&
+    user &&
+    user.accessLevel === membershipState.MEMBER;
+  const userIsOfficerOrAdmin =
+    userIsAuthenticated &&
+    user &&
+    user.accessLevel >= membershipState.OFFICER;
+  const signedInRoutes = [
+    // new for Overview
+    {
+      Component: Overview,
+      path: '/user-manager',
+      allowedIf: userIsOfficerOrAdmin,
+      redirect: '/',
+      inAdminNavbar: true
+    },
+    //
+    // {
+    //   Component: EmailPage,
+    //   path: '/email-list',
+    //   allowedIf: userIsOfficerOrAdmin,
+    //   redirect: '/',
+    //   inAdminNavbar: true
+    // },
+    {
+      Component: LedSign,
+      path: '/led-sign',
+      allowedIf: userIsOfficerOrAdmin,
+      redirect: '/',
+      inAdminNavbar: true
+    },
+    {
+      Component: Printing,
+      path: '/2DPrinting',
+      allowedIf: userIsMember || userIsOfficerOrAdmin,
+      redirect: '/login'
+    },
+    {
+      Component: Login,
+      path: '/login*',
+      allowedIf: !userIsAuthenticated,
+      redirect: '/',
+      queryParams: {
+        redirect: 'redirect',
+      },
+    },
+    {
+      Component: ForgotPassword,
+      path: '/forgot',
+      allowedIf: !userIsAuthenticated,
+      redirect: '/'
+    },
+    {
+      Component: MembershipApplication,
+      path: '/register',
+      allowedIf: !userIsAuthenticated,
+      redirect: '/'
+    },
+    {
+      Component: Profile,
+      path: '/profile',
+      allowedIf: userIsAuthenticated,
+      redirect: '/login'
+    },
+    {
+      Component: EditUserInfo,
+      path: '/user/edit/:id',
+      allowedIf: userIsOfficerOrAdmin,
+      redirect: '/',
+      inAdminNavbar: true
+    },
+    {
+      Component: URLShortenerPage,
+      path: '/short',
+      allowedIf: userIsOfficerOrAdmin,
+      inAdminNavbar: true,
+      redirect: '/',
+    },
+    {
+      Component: sendUnsubscribeEmail,
+      path: '/unsub',
+      allowedIf: userIsOfficerOrAdmin,
+      inAdminNavbar: true,
+      redirect: '/',
+    },
+    {
+      Component: Messaging,
+      path: '/messaging/:id?',
+      allowedIf: userIsMember || userIsOfficerOrAdmin,
+      redirect: '/login'
+    },
+    {
+      Component: AdvertisementAdmin,
+      path: '/advertisement-admin',
+      allowedIf: userIsOfficerOrAdmin,
+      redirect: '/',
+      inAdminNavbar: true
+    },
+    {
+      Component: CardReader,
+      path: '/card-reader',
+      allowedIf: userIsOfficerOrAdmin,
+      redirect: '/',
+      inAdminNavbar: true
+    },
+    {
+      Component: AdminDesserts,
+      path: '/dessert-admin',
+      allowedIf: userIsOfficerOrAdmin,
+      redirect:'/',
+      inAdminNavbar: true
+    }
+  ];
+  const signedOutRoutes = [
+    { Component: Home, path: '/' },
+    { Component: VerifyEmailPage, path: '/verify' },
+    { Component: ResetPasswordPage, path: '/reset' },
+    { Component: AboutPage, path: '/about'},
+    { Component: ProjectsPage, path: '/projects'},
+    { Component: EmailPreferencesPage, path: '/emailPreferences' },
+    { Component: DessertPage, path: '/desserts'}
+  ];
   return (
     <div>
       <Switch>
