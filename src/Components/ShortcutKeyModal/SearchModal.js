@@ -94,9 +94,6 @@ export default function SearchModal({ appProps }) {
    */
   const getUserData = async () => {
     const currentKeyword = keywordRef.current;
-    if (currentKeyword !== keywordRef.current) {
-      return; // Abort, keyword has changed
-    }
 
     try {
       const apiResponse = await getAllUsers({
@@ -105,26 +102,25 @@ export default function SearchModal({ appProps }) {
         sortOrder: 'asc'
       });
 
-      if (!apiResponse.error) {
-        const userMatches = apiResponse.responseData.items.filter((u) => {
-          const searchKey = currentKeyword.toLowerCase();
-          const fullname = `${u.firstName ?? ''} ${u.lastName ?? ''}`;
+      if (apiResponse.error) return; // Exit early if there's an API error
 
-          return (
-            u.firstName?.toLowerCase().includes(searchKey) ||
-            u.lastName?.toLowerCase().includes(searchKey) ||
-            u.email?.toLowerCase().includes(searchKey) ||
-            fullname.toLowerCase().includes(searchKey)
-          );
-        }).map((u) => ({
-          pageName: `${u.firstName} ${u.lastName} (${u.email})`,
-          path: `/user/edit/${u._id}`,
-          type: 'user'
-        }));
+      const searchKey = currentKeyword.toLowerCase();
+      const userMatches = apiResponse.responseData.items.filter((u) => {
+        const fullname = `${u.firstName ?? ''} ${u.lastName ?? ''}`;
+        return (
+          u.firstName?.toLowerCase().includes(searchKey) ||
+          u.lastName?.toLowerCase().includes(searchKey) ||
+          u.email?.toLowerCase().includes(searchKey) ||
+          fullname.toLowerCase().includes(searchKey)
+        );
+      }).map((u) => ({
+        pageName: `${u.firstName} ${u.lastName} (${u.email})`,
+        path: `/user/edit/${u._id}`,
+        type: 'user'
+      }));
 
-        if (currentKeyword === keywordRef.current) {
-          setSuggestions(prev => [...prev, ...userMatches]);
-        }
+      if (currentKeyword === keywordRef.current) {
+        setSuggestions(prev => [...prev, ...userMatches]);
       }
     } catch (error) {
       setErrorMsg(error);
