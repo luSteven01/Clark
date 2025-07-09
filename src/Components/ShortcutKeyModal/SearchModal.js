@@ -2,9 +2,9 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import './SearchModal.css';
 import { officerOrAdminRoutes, signedOutRoutes, memberRoutes, notAuthenticatedRoutes } from '../../Routes';
 import { membershipState } from '../../Enums';
-import { getAllUsers } from '../../APIFunctions/User';
 import { useUser } from '../context/UserContext';
 import { useAuth } from '../context/AuthContext';
+import { searchAllUsers } from '../../APIFunctions/UserSearch';
 
 export default function SearchModal({ appProps }) {
   const [open, setOpen] = useState(false);
@@ -90,78 +90,40 @@ export default function SearchModal({ appProps }) {
    * Async function fetches all user data from the API
    */
   const getUserData = async () => {
-    // Suggest matching records using the first and last keywords
-    const partition = keyword.toLowerCase().trim().split(' ');
-    let firstMap = [];
-    let secondMap = [];
-    const firstSearchKey = partition[0];
-
     try {
-      const apiResponse = await getAllUsers({
+      const apiResponse = await searchAllUsers({
         token: user.token,
-        query: firstSearchKey,
+        query: keyword,
         sortColumn: 'firstName',
         sortOrder: 'asc'
       });
 
       if (apiResponse.error) return; // Exit early if there's an API error
 
-      firstMap = apiResponse.responseData.items
+      const userMatches = apiResponse.responseData.items
         .filter((u) => {
+          const fullname = `${u.firstName ?? ''} ${u.lastName ?? ''}`;
           return (
-            u.firstName?.toLowerCase().includes(firstSearchKey) ||
-            u.lastName?.toLowerCase().includes(firstSearchKey) ||
-            u.email?.toLowerCase().includes(firstSearchKey)
+            u.firstName?.toLowerCase().includes(keyword) ||
+            u.lastName?.toLowerCase().includes(keyword) ||
+            u.email?.toLowerCase().includes(keyword) ||
+            fullname.toLowerCase().includes(keyword)
           );
         })
-        .slice(0, 5);
+        .slice(0, 5)
+        .map((u) => ({
+          pageName: `${u.firstName} ${u.lastName} (${u.email})`,
+          path: `/user/edit/${u._id}`,
+          type: 'user'
+        }));
+
+      if (userMatches.length > 0) {
+        setSuggestions(prev => [...prev, ...userMatches]);
+      }
+
     } catch (error) {
       setErrorMsg(error);
     }
-
-    if (partition.length > 1) {
-      const lastSearchKey = partition[partition.length - 1];
-      try {
-        const secondAPIRes = await getAllUsers({
-          token: user.token,
-          query: lastSearchKey,
-          sortColumn: 'firstName',
-          sortOrder: 'asc'
-        });
-
-        if (secondAPIRes.error) return;
-        secondMap = secondAPIRes.responseData.items
-          .filter((u) => {
-            const fullname = `${u.firstName ?? ''} ${u.lastName ?? ''}`;
-            return (
-              u.lastName?.toLowerCase().includes(lastSearchKey) ||
-              fullname.toLowerCase().includes(keyword)
-            );
-          })
-          .slice(0, 5);
-      } catch (error) {
-        setErrorMsg(error);
-      }
-    }
-
-    const allMatches = [...firstMap, ...secondMap];
-
-    if (allMatches === 0) return;
-
-    const seen = new Set();
-    const uniqueMatches = allMatches.filter(u => {
-      if (seen.has(u._id)) return false;
-      seen.add(u._id);
-      return true;
-    })
-      .slice(0, 5)
-      .map((u) => ({
-        pageName: `${u.firstName} ${u.lastName} (${u.email})`,
-        path: `/user/edit/${u._id}`,
-        type: 'user'
-      }));
-
-    setSuggestions(prev => [...prev, ...uniqueMatches]);
   };
 
   /**
