@@ -9,7 +9,6 @@ export default function SearchModal({ appProps }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
   const modalRef = useRef(null);
-  const keywordRef = useRef('');
   const [keyword, setKeyword] = useState('');
   const [suggestions, setSuggestions] = useState([...signedOutRoutes]);
   const [selectItem, setSelectItem] = useState(0);
@@ -85,41 +84,36 @@ export default function SearchModal({ appProps }) {
     );
   };
 
-  useEffect(() => {
-    keywordRef.current = keyword;
-  }, [keyword]);
-
   /**
    * Async function fetches all user data from the API
    */
   const getUserData = async () => {
-    const currentKeyword = keywordRef.current;
-
     try {
       const apiResponse = await getAllUsers({
         token: user.token,
+        query: keyword,
         sortColumn: 'firstName',
         sortOrder: 'asc'
       });
 
       if (apiResponse.error) return; // Exit early if there's an API error
+      const searchKey = keyword.toLowerCase().split();
+      const userMatches = apiResponse.responseData.items
+        .filter((u) => {
+          return (
+            u.firstName?.toLowerCase().includes(searchKey) ||
+            u.lastName?.toLowerCase().includes(searchKey) ||
+            u.email?.toLowerCase().includes(searchKey)
+          );
+        })
+        .slice(0, 5)
+        .map((u) => ({
+          pageName: `${u.firstName} ${u.lastName} (${u.email})`,
+          path: `/user/edit/${u._id}`,
+          type: 'user'
+        }));
 
-      const searchKey = currentKeyword.toLowerCase();
-      const userMatches = apiResponse.responseData.items.filter((u) => {
-        const fullname = `${u.firstName ?? ''} ${u.lastName ?? ''}`;
-        return (
-          u.firstName?.toLowerCase().includes(searchKey) ||
-          u.lastName?.toLowerCase().includes(searchKey) ||
-          u.email?.toLowerCase().includes(searchKey) ||
-          fullname.toLowerCase().includes(searchKey)
-        );
-      }).map((u) => ({
-        pageName: `${u.firstName} ${u.lastName} (${u.email})`,
-        path: `/user/edit/${u._id}`,
-        type: 'user'
-      }));
-
-      if (currentKeyword === keywordRef.current) {
+      if (userMatches.length > 0) {
         setSuggestions(prev => [...prev, ...userMatches]);
       }
     } catch (error) {
