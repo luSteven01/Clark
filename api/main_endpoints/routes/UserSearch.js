@@ -28,12 +28,12 @@ router.post('/shortcutsearchusers', async function(req, res) {
   if (req.body.query) {
     const parts = req.body.query.trim().split(/\s+/);
     if (parts.length >= 2) {
-        maybeOr = {
+      maybeOr = {
         $and: [
-            { firstName: new RegExp(`^${parts[0]}`, 'i') },
-            { lastName: new RegExp(`^${parts.slice(1).join(' ')}`, 'i') }
+          { firstName: new RegExp(`^${parts[0]}`, 'i') },
+          { lastName: new RegExp(`^${parts.slice(1).join(' ')}`, 'i') }
         ]
-        };
+      };
     } else {
         maybeOr = {
             $or: ['firstName', 'lastName', 'email'].map((fieldName) => ({
