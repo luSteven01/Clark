@@ -35,13 +35,13 @@ router.post('/shortcutsearchusers', async function(req, res) {
         ]
       };
     } else {
-        maybeOr = {
-            $or: ['firstName', 'lastName', 'email'].map((fieldName) => ({
-                [fieldName]: {
-                    $regex: RegExp(req.body.query, 'i'),
-                }
-            }))
-        };
+      maybeOr = {
+        $or: ['firstName', 'lastName', 'email'].map((fieldName) => ({
+          [fieldName]: {
+              $regex: RegExp(req.body.query, 'i'),
+          }
+        }))
+      };
     }
   }
 
